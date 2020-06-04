@@ -1,4 +1,4 @@
-# SleekRNAseq
+# RNAsleek
 Semi-automated RNAseq pipeline for processing public RNAseq samples on a PBSpro cluster.
 
 SleekRNAseq aims to get you both mapped reads and some nice QC for a whole bunch of
