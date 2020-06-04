@@ -40,10 +40,11 @@ FastQC (v0.11.5)
 
 ##### Hisat
 samtools, assumed to be available with `module load` (1.6)
+
 hisat2 (2.1.0)
 
 ##### CollectRNAseqMetrics
-Picard Tools (52.0)
+Picard Tools (52.0), which is
 assumed to be available at `$HOME/extra_programs/picard.jar`
 
 ### RunInfo file
