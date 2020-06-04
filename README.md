@@ -1,5 +1,6 @@
 # RNAsleek
-Semi-automated RNAseq pipeline for processing public RNAseq samples on a PBSpro cluster.
+Semi-automated RNAseq pipeline for processing public RNAseq samples on a cluster with PBSpro. 
+Actually... it's really not configurable enough to be used for anything but the HHU HPC cluster, just right now.
 
 SleekRNAseq aims to get you both mapped reads and some nice QC for a whole bunch of
 RNAseq samples with some safety checks built in to make sure everything is 
@@ -128,4 +129,4 @@ python <path_to>/RNAsleek/viz/summarizer.py <project_directory> <RunInfo_file> -
 ```
 
 ## Thanks
-Thank you to @danidey for some code and a whole lot of inspiration.
+Thank you to @danidey for some code and a whole lot of inspiration and organization
