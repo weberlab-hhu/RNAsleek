@@ -12,10 +12,39 @@ designed to be used by others**
 To get started you need a few things
 
 ### All the tools
-#### python
+#### python + packages
 It's only been tested under python3.6, hopefully works forward at least
-#### the rest
-... todo...
+
+You will also need the packages listed in requirements.txt, e.g.
+```
+pip install -r requirements.txt
+```
+
+#### Bioinformatics tools
+Each step has certain dependencies. The versions 
+listed in parentheses
+indicate what we tested it with/used.
+
+##### Wget or Fetch
+In practice Wget was much less likely to throw an error for
+the download, but both of the above still need SRA Toolkit
+for `fastq-dump` (2.8.2).
+
+##### Trimmomatic
+Current non-dynamic code expects the jar
+and adapters to be found within `$HOME/extra_programs/Trimmomatic-0.36/`.
+Configurability is also on the todo list (0.36).
+
+##### Fastqc
+FastQC (v0.11.5)
+
+##### Hisat
+samtools, assumed to be available with `module load` (1.6)
+hisat2 (2.1.0)
+
+##### CollectRNAseqMetrics
+Picard Tools (52.0)
+assumed to be available at `$HOME/extra_programs/picard.jar`
 
 ### RunInfo file
 That is a SraRunInfo.csv (or file with the exact same columns) 
@@ -55,18 +84,25 @@ and the hisat2 indexes (for Hisat only) to be found under
 ## Setup
 To setup all the scripts and qsub files you will just need to run
 ```
-python <path_to>/SleekRNAseq/run.py <project_directory> <RunInfo_file> -c <config.ini>
+python <path_to>/RNAsleek/rnasleek.py <project_directory> <RunInfo_file> -c <config.ini>
 ```
 
 ## Step wise
 Once you have the steps you can cd into your chosen 'project_directory'
-and qsub the files in order. So run wget before trimmomatic, and trimmomatic
-before fastqc and hisat, etc... It will setup a job array with all the
+and qsub the files once their dependencies are met. 
+The qsub script will setup a job array with all the
 samples.
 
-After each step finishes you should run 
+The Job dependencies are as follows
+- Wget or Fetch: None
+- Trimming: Wget or Fetch
+- Fastqc: Trimming
+- Hisat: Trimming
+- CollectRNAseqMetrics: Hisat
+
+After each job finishes you should run 
 ```
-python <path_to>/SleekRNAseq/run.py <project_directory> <RunInfo_file> -c <config.ini> --check_output
+python <path_to>/RNAsleek/rnasleek.py <project_directory> <RunInfo_file> -c <config.ini> --check_output
 ```
 This will produce the file `project_directory/output_report.txt`. This files shows
 any and all errors found in the stderr output files as well as any deviations from 
@@ -81,11 +117,11 @@ If you've ran all the steps from example.ini, you can also get a
 nice output summary via multiQC and some plotting here.
 
 ```
-python <path_to>/SleekRNAseq/run.py <project_directory> <RunInfo_file> -c <config.ini> --prep_multiqc
+python <path_to>/RNAsleek/rnasleek.py <project_directory> <RunInfo_file> -c <config.ini> --prep_multiqc
 cd <project_directory>/multiqc/
 multiqc .
 cd ../multiqc_untrimmed
 multiqc .
 cd ../..
-python <path_to>/SleekRNAseq/viz/summarizer.py <project_directory> <RunInfo_file> -o <output.pdf>
+python <path_to>/RNAsleek/viz/summarizer.py <project_directory> <RunInfo_file> -o <output.pdf>
 ```
