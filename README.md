@@ -126,3 +126,6 @@ multiqc .
 cd ../..
 python <path_to>/RNAsleek/viz/summarizer.py <project_directory> <RunInfo_file> -o <output.pdf>
 ```
+
+## Thanks
+Thank you to @danidey for some code and a whole lot of inspiration.
