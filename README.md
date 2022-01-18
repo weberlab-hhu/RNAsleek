@@ -128,5 +128,20 @@ cd ../..
 python <path_to>/RNAsleek/viz/summarizer.py <project_directory> <RunInfo_file> -o <output.pdf>
 ```
 
+## Work arounds for the lack of internet access (e.g. on our HPC)
+- run the first setup on a machine _with_ internet access
+- run the `wget` on the same machine.
+```
+# needs slight customization because each script calls the variable `$PBS_O_WORKDIR`
+# so make this variable (obviously, this assumes your wd is the project directory,
+# and if not, `pwd` can be replaced with the full path to the project directory)
+export PBS_O_WORKDIR=`pwd`
+# run the download scripts
+ls scripts/wgetSRS*|xargs -n1 -P2 -I% bash %
+# copy the result to the hpc (or modify for your internet-free machine)
+cd ..
+rsync -ravu <project_dir> <user_name>@storage.hpc.rz.uni-duesseldorf.de:/gpfs/project/<user_name>/
+```
+
 ## Thanks
 Thank you to @danidey for some code and a whole lot of inspiration and organization
