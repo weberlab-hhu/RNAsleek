@@ -1,0 +1,24 @@
+#!/bin/bash
+#PBS -l select=1:ncpus=1:mem=14gb
+#PBS -l walltime=10:05:00
+#PBS -A "HelixerOpt"
+#PBS -N hstb_SPECIES 
+
+source $HOME/.bashrc
+
+cd $PBS_O_WORKDIR
+
+## Log-File definieren
+export LOGFILE=$PBS_O_WORKDIR/$PBS_JOBNAME"."$PBS_JOBID".log"
+echo "$PBS_JOBID ($PBS_JOBNAME) @ `hostname` at `date` in "$RUNDIR" START" > $LOGFILE
+echo "`date +"%d.%m.%Y-%T"`" >> $LOGFILE 
+
+## important bits
+species=SPECIES
+hisat2-build genomes/$species/$species.fa genomes/$species/$species
+## and more logging
+
+qstat -f $PBS_JOBID >> $LOGFILE  
+ 
+echo "$PBS_JOBID ($PBS_JOBNAME) @ `hostname` at `date` in "$RUNDIR" END" >> $LOGFILE
+echo "`date +"%d.%m.%Y-%T"`" >> $LOGFILE

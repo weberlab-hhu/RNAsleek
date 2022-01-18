@@ -1,0 +1,34 @@
+#!/bin/bash
+#PBS -l select=1:ncpus=1:mem=500mb
+#PBS -l walltime=01:05:00
+#PBS -A "HelixerOpt"
+#PBS -N rflt_SPECIES 
+
+module load Cufflinks
+
+cd $PBS_O_WORKDIR
+
+## Log-File definieren
+export LOGFILE=$PBS_O_WORKDIR/$PBS_JOBNAME"."$PBS_JOBID".log"
+echo "$PBS_JOBID ($PBS_JOBNAME) @ `hostname` at `date` in "$RUNDIR" START" > $LOGFILE
+echo "`date +"%d.%m.%Y-%T"`" >> $LOGFILE 
+
+
+## important bits
+species=SPECIES
+basename=genomes/$species/$species
+
+# remove gz file if exists (doesn't overwrite otherwise)
+[ -e $basename.refflat3.gz ] && rm $basename.refflat3.gz
+
+gffread $basename.gff3 -T -o $basename.gtf
+gtfToGenePred -genePredExt -geneNameAsName2 -ignoreGroupsWithoutExons $basename.gtf $basename.refflat2
+paste <(cut -f 12 $basename.refflat2) <(cut -f 1-10 $basename.refflat2) > $basename.refflat3
+gzip $basename.refflat3
+
+## and more logging
+
+qstat -f $PBS_JOBID >> $LOGFILE  
+ 
+echo "$PBS_JOBID ($PBS_JOBNAME) @ `hostname` at `date` in "$RUNDIR" END" >> $LOGFILE
+echo "`date +"%d.%m.%Y-%T"`" >> $LOGFILE
