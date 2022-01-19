@@ -674,7 +674,7 @@ class CollectRNAseqMetricsJob(Job):
         return ['{}/picard/{}.stats'.format(self.directory, run_task.sample_id)]
 
     def verbatimable(self, run_task, strand="NONE"):
-        text = """java -Xmx1G -jar /home/alden101/extra_programs/picard.jar CollectRnaSeqMetrics \
+        text = """java -Xmx1G -jar $HOME/extra_programs/picard.jar CollectRnaSeqMetrics \
     REF_FLAT=../genomes/{sp}/{sp}.refflat3.gz I=mapped/{srs}.bam O=picard/{srs}.stats \
     {verbatim}""".format(sp=self.sp,
                          srs=run_task.sample_id,
