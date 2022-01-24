@@ -109,16 +109,19 @@ class Project:
         for task in self.tasks:
             for job in task.jobs:
                 for rtype in ['out', 'err', 'log']:
-                    old = job.get_report_path(sample_id=task.sample_id,
-                                              all_samples=allsamples,
-                                              report_type=rtype)
-                    new = '{}/{}.{}.{}'.format(outpath, task.sample_id, job.name, rtype)
+                    try:
+                        old = job.get_report_path(sample_id=task.sample_id,
+                                                  all_samples=allsamples,
+                                                  report_type=rtype)
+                        new = '{}/{}.{}.{}'.format(outpath, task.sample_id, job.name, rtype)
 
-                    if job.name == "hisat" and rtype == "err":
-                        # because multiQC seems to give up if it sees to many warnings before hisat output
-                        self.copy_tail(old, new, 30)
-                    else:
-                        os.symlink(os.path.relpath(old, start=outpath), new)
+                        if job.name == "hisat" and rtype == "err":
+                            # because multiQC seems to give up if it sees to many warnings before hisat output
+                            self.copy_tail(old, new, 30)
+                        else:
+                            os.symlink(os.path.relpath(old, start=outpath), new)
+                    except ValueError:
+                        pass
 
         picard = self.directory + '/picard'
         if os.path.exists(picard):
