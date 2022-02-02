@@ -1,31 +1,58 @@
 import controller
-import argparse
+import click
 
 
-def main(directory, run_file, config_file, check_output=False, prep_multiqc=False):
+@click.group()
+@click.option('-d', '--directory', help='project directory', required=True)
+@click.option('-s', '--sra-run-info', help='info on target data in the format of SraRunInfo.csv')
+@click.option('-c', '--run-config', help='config for commands in pipeline, filters, etc...')
+@click.pass_context
+def cli(ctx, **kwargs):
+    ctx.ensure_object(dict)
+    ctx.obj.update(kwargs)
+
+
+@cli.command()
+@click.pass_context
+def setup(ctx):
+    project = get_project(ctx)
+    project.setup_directories()
+    project.write_scripts()
+    project.write_qsubs()
+
+
+@cli.command()
+@click.pass_context
+def check(ctx):
+    project = get_project(ctx)
+    project.check_output()
+
+
+@cli.command()
+@click.pass_context
+def multiqc(ctx):
+    project = get_project(ctx)
+    project.prep_multiqc()
+
+
+@cli.command()
+def genome():
+    pass
+
+
+def get_project(ctx):
+    directory = ctx.obj['directory']
+    run_file = ctx.obj['sra_run_info']
+    config_file = ctx.obj['run_config']
+    assert run_file is not None, "missing option. --sra-run-info required for this subcommand"
+    assert config_file is not None, "missing option. --run-config required for this subcommand"
     samples = controller.parse_runinfo(run_file)
-    print(controller.config_based_filters(config_file))
     filtered_samples = controller.filter_runinfo(samples, config_file)
-    print(filtered_samples)
+    print(len(filtered_samples), "samples passed filter")
     project = controller.Project(directory, job_config=config_file)  # todo, cleanup old read format remnants
     project.define_tasks(filtered_samples)
-    if check_output:
-        project.check_output()
-    else:
-        project.setup_directories()
-        project.write_scripts()
-        project.write_qsubs()
-    if prep_multiqc:
-        project.prep_multiqc()
+    return project
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('directory', help='project working directory')
-    parser.add_argument('run_file', help='file with SRR numbers, one per line')
-    parser.add_argument('-c', '--config', help='config file (see included example.ini)', default=None)
-    parser.add_argument('--check_output', action='store_true', help='set to check output instead of writing qsubs')
-    parser.add_argument('--prep_multiqc', action='store_true', help="sets up symlinks for multiqc")
-    args = parser.parse_args()
-    main(directory=args.directory, run_file=args.run_file, config_file=args.config, check_output=args.check_output,
-         prep_multiqc=args.prep_multiqc)
+    cli()
