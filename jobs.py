@@ -696,3 +696,37 @@ class CollectRNAseqMetricsJobPaired(CollectRNAseqMetricsJob):
 
 class CollectRNAseqMetricsJobSingle(CollectRNAseqMetricsJob):
     pass
+
+
+class GenomePrepJob(Job):
+    """single job for genome annotation, not combined with Tasks"""
+    def __init__(self, directory, species):
+        super(GenomePrepJob, self).__init__(directory)
+        self.name = 'genome_prep'
+        self.mb = 14000
+        self.modules = ['Cufflinks', 'bwa-mem2/2.1']  # will have to doublecheck if using the avail bwa makes sense
+        self.sp = species
+        self.time = "23:55:00"
+
+    def start_main_text(self):
+        text = f"""
+cd ..
+## refflat for Picard Tools
+species={self.sp}
+basename=genomes/$species/$species
+
+# remove gz file if exists (doesn't overwrite otherwise)
+[ -e $basename.refflat3.gz ] && rm $basename.refflat3.gz
+
+gffread $basename.gff3 -T -o $basename.gtf
+gtfToGenePred -genePredExt -geneNameAsName2 -ignoreGroupsWithoutExons $basename.gtf $basename.refflat2
+paste <(cut -f 12 $basename.refflat2) <(cut -f 1-10 $basename.refflat2) > $basename.refflat3
+gzip $basename.refflat3
+
+## hisat2 index
+hisat2-build genomes/$species/$species.fa genomes/$species/$species
+
+## bwa mem index
+bwa-mem2 index -p genomes/$species/$species genomes/$species/$species.fa 
+"""
+        return text
