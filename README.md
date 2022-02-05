@@ -44,6 +44,9 @@ samtools, assumed to be available with `module load` (1.6)
 
 hisat2 (2.1.0)
 
+##### BWA
+bwa 2.1 (`module load bwa-mem2/2.1`)
+
 ##### CollectRNAseqMetrics
 Picard Tools (52.0), which is
 assumed to be available at `$HOME/extra_programs/picard.jar`

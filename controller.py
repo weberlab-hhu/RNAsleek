@@ -187,12 +187,11 @@ def parse_runinfo(filein):
     index_errs_so_far = 0
     with open(filein) as handlein:
         f = csv.reader(handlein)
-        next(f)  # skip title line
+        name_cols = parse_name_cols(next(f))  # column names to internal names and column indexes
         group_by_sample = {}
         for csvline in f:
             try:
-                line = parse_runinfo_line(csvline)
-
+                line = parse_runinfo_line(csvline, name_cols)
                 # setup dictionary[sample_id] = [1st_sample_line, 2nd_sample_line, ...]
                 try:
                     group_by_sample[line['sample']].append(line)
@@ -223,11 +222,30 @@ def format_sample(line, runs, download_paths):
     return out
 
 
-def parse_runinfo_line(line):
+def parse_name_cols(title_line):
+    # example (wrapped):
+    # Run, ReleaseDate, LoadDate, spots, bases, spots_with_mates, avgLength, size_MB, AssemblyName, download_path,
+    # Experiment, LibraryName, LibraryStrategy, LibrarySelection, LibrarySource, LibraryLayout, InsertSize, InsertDev,
+    # Platform, Model, SRAStudy, BioProject, Study_Pubmed_id, ProjectID, Sample, BioSample, SampleType, TaxID,
+    # ScientificName, SampleName, g1k_pop_code, source, g1k_analysis_group, Subject_ID, Sex, Disease, Tumor,
+    # Affection_Status, Analyte_Type, Histological_Type, Body_Site, CenterName, Submission, dbgap_study_accession,
+    # Consent, RunHash, ReadHash
+    # basically everything >>> snake case
+    renaming = {"Run": "run", "download_path": "download_path", "LibraryStrategy": "library_strategy",
+                "LibraryLayout": "library_layout", "SRAStudy": "study", "Sample": "sample", "TaxID": "taxid",
+                "ScientificName": "scientific_name", "Consent": "consent", "SampleName": "sample_name",
+                "Platform": "platform"}
+
+    name_cols = {}
+    for key, val in renaming.items():
+        name_cols[val] = title_line.index(key)
+    print('selecting columns as follows')
+    print(name_cols)
+    return name_cols
+
+
+def parse_runinfo_line(line, name_cols):
     """get important bits for a line in SraRunInfo.csv ncbi format"""
-    # todo, check column names
-    name_cols = {"sample": 24, "sample_name": 29, "run": 0, "library_strategy": 12, "library_layout": 15,
-                 "platform": 18, "study": 20, "taxid": 27, "scientific_name": 28, "consent": 44, "download_path": 9}
     out = {}
     for key in name_cols:
         out[key] = line[name_cols[key]]
@@ -241,7 +259,7 @@ def filter_runinfo(parsed_runinfo, config_file):
     targets = config_based_filters(config_file)
     out = parsed_runinfo
     for key in targets:
-        out = [x for x in out if x[key] == targets[key] or x[key] is None]
+        out = [x for x in out if x[key] == targets[key] or targets[key] is None]
     return out
 
 
