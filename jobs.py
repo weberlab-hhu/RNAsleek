@@ -621,13 +621,23 @@ class BWAJob(MappingJob):
         self.modules = ['SamTools/1.6']
         self.sp = 'Athaliana'  #todo, what is this doing hard coded?
 
-class BWAJobpPaired(BWAJob):
-    pass
-#      basename=$1
-#  genome=$2
-#  bwa mem $genome trimmed/${basename}_1P.fastq.gz trimmed/${basename}_2P.fastq.gz | \
-#  samtools view - -b | \
-#  samtools sort - -T mapped/sorting.$basename.bam -o mapped/$basename.bam
+
+class BWAJobPaired(BWAJob):
+    def verbatimable(self, run_task):
+        if run_task.trimmed_paired_extras != ['_1P', '_2P', '_1U', '_2U']:
+            raise ValueError("miss match between expected trimming endings and Task")
+
+        forward = ','.join(['trimmed/{}_1P.fastq.gz'.format(x) for x in run_task.run_ids])
+        reverse = ','.join(['trimmed/{}_2P.fastq.gz'.format(x) for x in run_task.run_ids])
+        text = f"bwa-mem2 mem ../genomes/{self.sp}/{self.sp} {forward} {reverse} {self.user_verbatim}"
+        return text
+
+
+class BWAJobSingle(BWAJob):
+    def verbatimable(self, run_task):
+        unpaired = ','.join(['trimmed/{}.fastq.gz'.format(x) for x in run_task.run_ids])
+        text = f"bwa-mem2 mem ../genomes/{self.sp}/{self.sp} {unpaired} {self.user_verbatim}"
+        return text
 
 
 class CoverageJob(Job):
