@@ -560,20 +560,8 @@ class MappingJob(Job):
     def verbatimable(self, run_task):
         raise NotImplementedError('Parent Mapping class has no "verbatimable" defined')
 
-    def main_text(self, run_task):
-        raise NotImplementedError('Parent Mapping class has no "main_text" defined')
-
     def expected_output(self, run_task):
-        raise NotImplementedError('Parent Mapping class has no "expected_output" defined')
-
-
-class HisatJob(MappingJob):
-    def __init__(self, directory):
-        super(HisatJob, self).__init__(directory)
-        self.name = 'hisat'
-        self.mb = 4000
-        self.modules = ['SamTools/1.6']
-        self.sp = 'Athaliana'
+        return ['{}/mapped/{}.{}'.format(self.directory, run_task.sample_id, x) for x in ['sam', 'bam']]
 
     # todo, make this into some sort of subordinate class so that it too can have user_verbatim, etc..
     def shared_text(self, run_task):
@@ -587,11 +575,17 @@ samtools view mapped/{sample_id}.sam -b |samtools sort -T mapped/tmp{sample_id} 
         text += self.shared_text(run_task)
         return text
 
+
+class HisatJob(MappingJob):
+    def __init__(self, directory):
+        super(HisatJob, self).__init__(directory)
+        self.name = 'hisat'
+        self.mb = 4000
+        self.modules = ['SamTools/1.6']
+        self.sp = 'Athaliana'
+
     def verbatimable(self, run_task):
         raise NotImplementedError('Parent Hisat class has no "verbatimable" defined')
-
-    def expected_output(self, run_task):
-        return ['{}/mapped/{}.{}'.format(self.directory, run_task.sample_id, x) for x in ['sam', 'bam']]
 
 
 class HisatJobSingle(HisatJob):
@@ -616,6 +610,24 @@ class HisatJobPaired(HisatJob):
 """.format(sp=self.sp, sample_id=run_task.sample_id, forward=forward, unpaired=unpaired, reverse=reverse,
            threads=self.threads, verbatim=self.user_verbatim)
         return text
+
+
+class BWAJob(MappingJob):
+    def __init__(self, directory):
+        super(MappingJob, self).__init__(directory)
+        self.name = "bwa"
+        self.time = "06:55:00"
+        self.mb = 1000
+        self.modules = ['SamTools/1.6']
+        self.sp = 'Athaliana'  #todo, what is this doing hard coded?
+
+class BWAJobpPaired(BWAJob):
+    pass
+#      basename=$1
+#  genome=$2
+#  bwa mem $genome trimmed/${basename}_1P.fastq.gz trimmed/${basename}_2P.fastq.gz | \
+#  samtools view - -b | \
+#  samtools sort - -T mapped/sorting.$basename.bam -o mapped/$basename.bam
 
 
 class CoverageJob(Job):
