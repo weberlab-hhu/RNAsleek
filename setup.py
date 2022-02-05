@@ -9,7 +9,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'rnasleek = rnasleek.cli:cli',
+            'rnasleek = rnasleek:cli',
         ],
     },
 )
