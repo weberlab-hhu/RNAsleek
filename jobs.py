@@ -91,17 +91,20 @@ class Job:
         }
         task_id = self.guess_task_id(sample_id, all_samples)
         is_type_fn = report_types[report_type]
-        allfiles = os.listdir(self.directory)
+        log_dir = os.path.join(self.directory, 'logs')
+        allfiles = os.listdir(log_dir)
         targfiles = [x for x in allfiles if is_type_fn(x, task_id)]
-        targfiles = ['{}/{}'.format(self.directory, x) for x in targfiles]
+        targfiles = [os.path.join(log_dir, x) for x in targfiles]
         if len(targfiles) == 1:
             out = targfiles[0]
         elif len(targfiles) > 1:
             log_times = [os.path.getmtime(x) for x in targfiles]
             pre_out = sorted(zip(targfiles, log_times), key=lambda x: x[1])
-            print("time sorted??")
+            print("time sorted:")
             print(pre_out)
             out = pre_out[-1][0]
+            print('selecting:')
+            print(out)
         else:
             raise ValueError("Zero matches for {} file {}".format(report_type, targfiles))
         return out
