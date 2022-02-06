@@ -19,7 +19,9 @@ class FileStdErrKilled(Exception):
 class Job:
     """Parent class for all jobs with generics setup"""
 
-    def __init__(self, directory):
+    TO_OE_TEXT = "2> logs/$PBS_JOBNAME.e${PBS_JOBID%\\[*}.$PBS_ARRAY_INDEX 1> logs/$PBS_JOBNAME.o${PBS_JOBID%\\[*}.$PBS_ARRAY_INDEX"
+
+    def __init__(self, directory, is_array=False):
         self.directory = directory
         self.name = None
         self.threads = 1
@@ -29,6 +31,7 @@ class Job:
         self.more_resources = ""
         self.modules = []
         self.user_verbatim = ''
+        self.is_array = is_array
 
     @property
     def extra_loading_verbatim(self):
@@ -119,20 +122,29 @@ class Job:
     def guess_task_id(sample_id, all_samples):
         return all_samples.index(sample_id) + 1  # +1 bc switch python -> bash numbering
 
+    def job_array_info(self, n_total):
+        if self.is_array:
+            return f"#PBS -J1-{n_total}"
+        else:
+            return ""
+
     def preface(self, n_total):
         pfx = """#!/bin/bash
 #PBS -l select=1:ncpus={threads}:mem={mb}mb{more}
 #PBS -l walltime={time}
 #PBS -A "{project}"
 #PBS -N {name}
-#PBS -J1-{n_total}
+{job_array_info}
 #PBS -r y
+#PBS -e /dev/null
+#PBS -o /dev/null
+
 source $HOME/.bashrc
 
 cd $PBS_O_WORKDIR
 
 ## Log-File setup
-export LOGFILE=$PBS_O_WORKDIR/$PBS_JOBNAME"."$PBS_JOBID".log"
+export LOGFILE=$PBS_O_WORKDIR/logs/$PBS_JOBNAME"."$PBS_JOBID".log"
 echo "$PBS_JOBID ($PBS_JOBNAME) @ `hostname` at `date` in "$RUNDIR" START" > $LOGFILE
 echo "`date +"%d.%m.%Y-%T"`" >> $LOGFILE 
 
@@ -142,7 +154,7 @@ echo "`date +"%d.%m.%Y-%T"`" >> $LOGFILE
            time=self.time,
            project=self.project,
            name=self.name,
-           n_total=n_total,
+           job_array_info=self.job_array_info(n_total),
            more=self.more_resources)
 
         pfx += self.load_module_text()
@@ -174,8 +186,8 @@ echo "`date +"%d.%m.%Y-%T"`" >> $LOGFILE
 
     def start_main_text(self):
         out = """sample_id=`sed $PBS_ARRAY_INDEX"q;d" {sample_id_file}`
-bash scripts/{name}$sample_id".sh"
-""".format(sample_id_file=self.sample_id_file(True), name=self.name, dir=self.directory)
+bash scripts/{name}$sample_id".sh {redirect}"
+""".format(sample_id_file=self.sample_id_file(True), name=self.name, redirect=self.TO_OE_TEXT)
         return out
 
     def sample_id_file(self, relative=False):
@@ -617,9 +629,9 @@ class BWAJob(MappingJob):
         super(MappingJob, self).__init__(directory)
         self.name = "bwa"
         self.time = "06:55:00"
-        self.mb = 1000
-        self.modules = ['SamTools/1.6']
-        self.sp = 'Athaliana'  #todo, what is this doing hard coded?
+        self.mb = 2000
+        self.modules = ['SamTools/1.6', 'bwa-mem2/2.1']
+        self.sp = 'Athaliana'  # todo, what is this doing hard coded?
 
 
 class BWAJobPaired(BWAJob):
