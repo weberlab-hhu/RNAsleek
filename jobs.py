@@ -21,7 +21,7 @@ class Job:
 
     TO_OE_TEXT = "2> logs/$PBS_JOBNAME.e${PBS_JOBID%\\[*}.$PBS_ARRAY_INDEX 1> logs/$PBS_JOBNAME.o${PBS_JOBID%\\[*}.$PBS_ARRAY_INDEX"
 
-    def __init__(self, directory, is_array=False):
+    def __init__(self, directory, is_array=True):
         self.directory = directory
         self.name = None
         self.threads = 1
@@ -740,7 +740,7 @@ class CollectRNAseqMetricsJobSingle(CollectRNAseqMetricsJob):
 class GenomePrepJob(Job):
     """single job for genome annotation, not combined with Tasks"""
     def __init__(self, directory, species):
-        super(GenomePrepJob, self).__init__(directory)
+        super(GenomePrepJob, self).__init__(directory, is_array=False)
         self.name = 'genome_prep'
         self.mb = 14000
         self.modules = ['Cufflinks', 'bwa-mem2/2.1']  # will have to doublecheck if using the avail bwa makes sense
