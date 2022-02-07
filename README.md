@@ -19,6 +19,7 @@ It's only been tested under python3.6, hopefully works forward at least
 You will also need the packages listed in requirements.txt, e.g.
 ```
 pip install -r requirements.txt
+pip install .  # for contributers/if code might change: pip install -e .
 ```
 
 #### Bioinformatics tools
@@ -69,32 +70,35 @@ must be specified.
 See example.ini
 
 ### Prepped genome information
-For now this is awkward, inflexilble, and manual... 
-cleaning it up is on the todo list...
 
-You only need this for steps that require a reference genome 
-(currently Hisat and CollectRNAseqMetrics), and
-this needs to be setup independent of this code base.
+If you haven't setup a genome with indexes for this species yet,
+then you should run:
 
-In a folder in the same directory as you will be running these
-analyses, you will need a folder named 'genomes' which should
-contain a folder with the species name specified in the config
-under 'sp' (e.g. `sp = example_species`). Continuing with this
-example you will want the genomic fasta file to be found
-under `genomes/example_species/example_species.fa`, the gff3 annotation
-file to be found under `genomes/example_species/example_species.gff3`
-and the hisat2 indexes (for Hisat only) to be found under 
-`genomes/example_species/example_species.\*.ht2`
+```
+rnasleek -d <project_directory> -s <RunInfo_file> -c <config.ini> genome \
+  -f <genome.fa> -g <genome.gff3> -s <SpeciesName>
+```
+
+This will copy the files `<genome.fa>` and `<genome.gff3>` into the 
+directory `genomes/<SpeciesName>` where `genomes` is located sister 
+to the project directory.
+
+`<SpeciesName>` must exactly match that listed under `sp = ` in mapping and
+other genome-requiring jobs in the config file.
+
+To run the indexing, from the project directory run `qsub qsubs/genome_prep.qsub`
 
 ## Setup
+
 To setup all the scripts and qsub files you will just need to run
 ```
-python <path_to>/RNAsleek/rnasleek.py <project_directory> <RunInfo_file> -c <config.ini>
+rnasleek -d <project_directory> -s <RunInfo_file> -c <config.ini> setup
 ```
 
+
 ## Step wise
-Once you have the steps you can cd into your chosen 'project_directory'
-and qsub the files once their dependencies are met. 
+Once you have the steps you can `cd` into your chosen _project_directory_
+and qsub the files once their dependencies are met (e.g. `qsub qsubs/wget.qsub`)
 The qsub script will setup a job array with all the
 samples.
 
@@ -103,11 +107,12 @@ The Job dependencies are as follows
 - Trimming: Wget or Fetch
 - Fastqc: Trimming
 - Hisat: Trimming
+- BWA: Trimming
 - CollectRNAseqMetrics: Hisat
 
 After each job finishes you should run 
 ```
-python <path_to>/RNAsleek/rnasleek.py <project_directory> <RunInfo_file> -c <config.ini> --check_output
+rnasleek -d <project_directory> -s <RunInfo_file> -c <config.ini> check
 ```
 This will produce the file `project_directory/output_report.txt`. This files shows
 any and all errors found in the stderr output files as well as any deviations from 
@@ -122,7 +127,7 @@ If you've ran all the steps from example.ini, you can also get a
 nice output summary via multiQC and some plotting here.
 
 ```
-python <path_to>/RNAsleek/rnasleek.py <project_directory> <RunInfo_file> -c <config.ini> --prep_multiqc
+rnasleek -d <project_directory> -s <RunInfo_file> -c <config.ini> multiqc
 cd <project_directory>/multiqc/
 multiqc .
 cd ../multiqc_untrimmed

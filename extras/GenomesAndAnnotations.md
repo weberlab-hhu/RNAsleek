@@ -1,4 +1,6 @@
 # Genome & Annotation
+> NOTE: this is now easier with the `rnasleek genome`
+> sub command. See main README.md
 
 ## pre-prep
 First you want to setup a `genomes/` directory 

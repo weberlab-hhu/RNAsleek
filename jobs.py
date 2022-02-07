@@ -189,7 +189,7 @@ echo "`date +"%d.%m.%Y-%T"`" >> $LOGFILE
 
     def start_main_text(self):
         out = """sample_id=`sed $PBS_ARRAY_INDEX"q;d" {sample_id_file}`
-bash scripts/{name}$sample_id".sh {redirect}"
+bash scripts/{name}$sample_id".sh" {redirect}
 """.format(sample_id_file=self.sample_id_file(True), name=self.name, redirect=self.TO_OE_TEXT)
         return out
 
