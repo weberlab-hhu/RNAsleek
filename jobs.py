@@ -632,7 +632,7 @@ class BWAJob(MappingJob):
         super(MappingJob, self).__init__(directory)
         self.name = "bwa"
         self.time = "06:55:00"
-        self.mb = 2000
+        self.mb = 16000
         self.modules = ['SamTools/1.6', 'bwa-mem2/2.1']
         self.sp = 'Athaliana'  # todo, what is this doing hard coded?
 
@@ -644,14 +644,16 @@ class BWAJobPaired(BWAJob):
 
         forward = ','.join(['trimmed/{}_1P.fastq.gz'.format(x) for x in run_task.run_ids])
         reverse = ','.join(['trimmed/{}_2P.fastq.gz'.format(x) for x in run_task.run_ids])
-        text = f"bwa-mem2 mem ../genomes/{self.sp}/{self.sp} {forward} {reverse} {self.user_verbatim}"
+        text = f"bwa-mem2 mem ../genomes/{self.sp}/{self.sp} {forward} {reverse} {self.user_verbatim} > " \
+               f"mapped/{run_task.sample_id}.sam"
         return text
 
 
 class BWAJobSingle(BWAJob):
     def verbatimable(self, run_task):
         unpaired = ','.join(['trimmed/{}.fastq.gz'.format(x) for x in run_task.run_ids])
-        text = f"bwa-mem2 mem ../genomes/{self.sp}/{self.sp} {unpaired} {self.user_verbatim}"
+        text = f"bwa-mem2 mem ../genomes/{self.sp}/{self.sp} {unpaired} {self.user_verbatim} > " \
+               f"mapped/{run_task.sample_id}.sam"
         return text
 
 
