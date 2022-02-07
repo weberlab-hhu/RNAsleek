@@ -21,7 +21,7 @@ class Job:
 
     TO_OE_TEXT = "2> logs/$PBS_JOBNAME.e${PBS_JOBID%\\[*}.$PBS_ARRAY_INDEX 1> logs/$PBS_JOBNAME.o${PBS_JOBID%\\[*}.$PBS_ARRAY_INDEX"
 
-    def __init__(self, directory, is_array=True):
+    def __init__(self, directory, is_array=True, redo=False):
         self.directory = directory
         self.name = None
         self.threads = 1
@@ -32,6 +32,7 @@ class Job:
         self.modules = []
         self.user_verbatim = ''
         self.is_array = is_array
+        self.redo = redo
 
     @property
     def extra_loading_verbatim(self):
@@ -131,7 +132,15 @@ class Job:
         else:
             return ""
 
-    def preface(self, n_total):
+    def bash_pass_on_already_successful_array_indices(self, to_rerun_ids):
+        """allows re-runs of successful jobs to exit out, while jobs with failed array indices are rerun"""
+        if self.redo:
+            text = f"""if [[ `python -c "if $PBS_ARRAY_INDEX not in {to_rerun_ids}: print('stop')"` ]];then exit;fi"""
+        else:
+            text = ""
+        return text
+
+    def preface(self, n_total, to_rerun_ids=None):
         pfx = """#!/bin/bash
 #PBS -l select=1:ncpus={threads}:mem={mb}mb{more}
 #PBS -l walltime={time}
@@ -139,8 +148,10 @@ class Job:
 #PBS -N {name}
 {job_array_info}
 #PBS -r y
-#PBS -e /dev/null
-#PBS -o /dev/null
+#PBS -e should_be_empty.err 
+#PBS -o should_be_empty.out
+
+{maybe_pass}
 
 source $HOME/.bashrc
 
@@ -158,6 +169,7 @@ echo "`date +"%d.%m.%Y-%T"`" >> $LOGFILE
            project=self.project,
            name=self.name,
            job_array_info=self.job_array_info(n_total),
+           maybe_pass=self.bash_pass_on_already_successful_array_indices(to_rerun_ids),
            more=self.more_resources)
 
         pfx += self.load_module_text()
@@ -206,15 +218,22 @@ bash scripts/{name}$sample_id".sh" {redirect}
     def verbatimable(self, **kwargs):
         raise NotImplementedError("no verbatimable method implemented for parent Job Class")
 
-    def write_qsub(self, n_total):
-        qsub_text = self.preface(n_total=n_total) + self.start_main_text() + self.epilog()
+    def write_qsub(self, n_total, to_rerun=None):
+        if to_rerun is None:
+            to_rerun = []
+        qsub_text = self.preface(n_total=n_total, to_rerun_ids=to_rerun) + self.start_main_text() + self.epilog()
         qsub_file = self.qsub_file()
         with open(qsub_file, 'w') as f:
             f.write(qsub_text)
 
     def qsub_file(self):
-        qsub_file = '{dir}/qsubs/{name}.qsub'.format(dir=self.directory,
-                                                     name=self.name)
+        if self.redo:
+            redo_txt = '.redo'
+        else:
+            redo_txt = ''
+        qsub_file = '{dir}/qsubs/{name}{redo_txt}.qsub'.format(dir=self.directory,
+                                                               name=self.name,
+                                                               redo_txt=redo_txt)
         return qsub_file
 
     def script_file(self, sample_id):

@@ -1,10 +1,9 @@
 import os
-import jobs  # used via eval
+import jobs
 import csv
 from configobj import ConfigObj
 from tasks import Task
 import pandas as pd
-import subprocess
 
 
 class Project:
@@ -32,12 +31,12 @@ class Project:
         if extra.lower() not in ok_formats:
             raise ValueError("attempt to define jobs with read format not in ".format(ok_formats))
 
-        directory = self.directory  # used via eval
+        directory = self.directory
         if job_config is None:
             targ_jobs = ['Fetch', 'Trimming', 'Fastqc', 'Hisat', 'Coverage']
             job_list = []
             for job_name in targ_jobs:
-                job_list.append(eval('jobs.{}Job{}(directory)'.format(job_name, extra)))
+                job_list.append(jobs.__dict__['{}Job{}'.format(job_name, extra)](directory))
         else:
             config = ConfigObj(job_config)
             print('adding jobs from {}:'.format(job_config))
@@ -45,7 +44,7 @@ class Project:
             job_list = []
             for section in config.sections:
                 if section not in ["All", "Filters"]:
-                    new_job = eval('jobs.{}Job{}(directory)'.format(section, extra))
+                    new_job = jobs.__dict__['{}Job{}'.format(section, extra)](directory)
                     new_job.configure(config, section, extra.lower())
                     job_list.append(new_job)
         return job_list
@@ -68,11 +67,16 @@ class Project:
     def check_output(self):
         allsamples = [x.sample_id for x in self.tasks]
         output_report = self.directory + '/output_report.txt'
+        # holder for job QC checks, lists (index matches self.jobs_paired sort; set is tasks within job
+        to_rerun = [set() for _ in self.jobs_single]
         with open(output_report, 'w') as f:
             for task in self.tasks:
-                for job in task.jobs:
+                for i, job in enumerate(task.jobs):
+                    task_id = job.guess_task_id(task.sample_id, allsamples)
                     for err_type, err in job.check_output(task, allsamples=allsamples):
                         f.write('{}|{}|{}|{}\n'.format(task.sample_id, job.name, err_type, err))
+                        to_rerun[i].add(task_id)
+        self.write_redo_qsubs(to_rerun)
 
     def write_scripts(self):
         for i in range(len(self.jobs_single)):
@@ -91,6 +95,18 @@ class Project:
         sample_id_file = self.tasks[0].jobs[0].sample_id_file()
         with open(sample_id_file, 'w') as f:
             f.writelines(sample_ids)
+
+    def write_redo_qsubs(self, to_rerun):
+        n_total = len(self.tasks)
+        written = []
+        for i, job in enumerate(self.jobs_single):
+            if to_rerun[i]:  # if at least one failed
+                if len(to_rerun[i]) != n_total:  # but not all (i.e. hasn't been run yet)
+                    job.redo = True
+                    job.write_qsub(n_total=n_total, to_rerun=to_rerun[i])
+                    written.append(job.qsub_file())
+        print(f'the following qsub files have been generated to assist in restarting jobs only for failed tasks: '
+              f'{written}. What parameters need adjusting and actually restarting, is left to you, the user.')
 
     def clean_up(self):
         pass
