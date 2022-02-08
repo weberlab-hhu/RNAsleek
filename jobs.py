@@ -650,8 +650,8 @@ class BWAJob(MappingJob):
     def __init__(self, directory):
         super(MappingJob, self).__init__(directory)
         self.name = "bwa"
-        self.time = "06:55:00"
-        self.mb = 16000
+        self.time = "23:55:00"
+        self.mb = 2500
         self.modules = ['SamTools/1.6', 'bwa-mem2/2.1']
         self.sp = 'Athaliana'  # todo, what is this doing hard coded?
 
