@@ -501,6 +501,14 @@ MAXINFO:{max_info} {verbatim}""".format(run_id=run_id, threads=self.threads, ill
         endings = ['{}.fastq.gz'.format(x) for x in run_task.trimmed_paired_extras]
         return ['{}/trimmed/{}{}'.format(self.directory, ri, end) for end in endings for ri in run_task.run_ids]
 
+    def check_output(self, run_task, allsamples):
+        # as parental, but skips file too small for unpaired samples, which may be empty
+        for err, message in super(TrimmingJobPaired, self).check_output(run_task, allsamples):
+            if err == 'FileTooSmallError' and (message.find('_1U.fastq') > -1 or message.find('_2U.fastq') > -1):
+                pass
+            else:
+                yield err, message
+
 
 class FastqcJob(Job):
     def __init__(self, directory):
