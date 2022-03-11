@@ -669,17 +669,21 @@ class BWAJobPaired(BWAJob):
         if run_task.trimmed_paired_extras != ['_1P', '_2P', '_1U', '_2U']:
             raise ValueError("miss match between expected trimming endings and Task")
 
-        forward = ','.join(['trimmed/{}_1P.fastq.gz'.format(x) for x in run_task.run_ids])
-        reverse = ','.join(['trimmed/{}_2P.fastq.gz'.format(x) for x in run_task.run_ids])
-        text = f"bwa-mem2 mem ../genomes/{self.sp}/{self.sp} {forward} {reverse} {self.user_verbatim} > " \
+        # use process substitution to combine multiple files for one sample
+        forward_inner = ' '.join(['trimmed/{}_1P.fastq.gz'.format(x) for x in run_task.run_ids])
+        reverse_inner = ' '.join(['trimmed/{}_2P.fastq.gz'.format(x) for x in run_task.run_ids])
+        forward = f'<(zcat {forward_inner})'
+        reverse = f'<(zcat {reverse_inner})'
+        text = f"bwa-mem2 mem {self.user_verbatim} ../genomes/{self.sp}/{self.sp} {forward} {reverse} > " \
                f"mapped/{run_task.sample_id}.sam"
         return text
 
 
 class BWAJobSingle(BWAJob):
     def verbatimable(self, run_task):
-        unpaired = ','.join(['trimmed/{}.fastq.gz'.format(x) for x in run_task.run_ids])
-        text = f"bwa-mem2 mem ../genomes/{self.sp}/{self.sp} {unpaired} {self.user_verbatim} > " \
+        unpaired_inner = ' '.join(['trimmed/{}.fastq.gz'.format(x) for x in run_task.run_ids])
+        unpaired = f'<({unpaired_inner})'
+        text = f"bwa-mem2 mem {self.user_verbatim} ../genomes/{self.sp}/{self.sp} {unpaired} > " \
                f"mapped/{run_task.sample_id}.sam"
         return text
 
