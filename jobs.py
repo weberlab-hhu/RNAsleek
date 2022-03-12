@@ -682,7 +682,7 @@ class BWAJobPaired(BWAJob):
 class BWAJobSingle(BWAJob):
     def verbatimable(self, run_task):
         unpaired_inner = ' '.join(['trimmed/{}.fastq.gz'.format(x) for x in run_task.run_ids])
-        unpaired = f'<({unpaired_inner})'
+        unpaired = f'<(zcat {unpaired_inner})'
         text = f"bwa-mem2 mem {self.user_verbatim} ../genomes/{self.sp}/{self.sp} {unpaired} > " \
                f"mapped/{run_task.sample_id}.sam"
         return text
