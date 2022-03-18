@@ -679,6 +679,37 @@ class BWAJobPaired(BWAJob):
         return text
 
 
+class FlagstatJob(Job):
+    def __init__(self, directory):
+        super(FlagstatJob, self).__init__(directory)
+        self.name = "flagstat"
+        self.time = "06:55:00"
+        self.mb = 200
+        self.threads = 1
+
+    def output_dirs(self):
+        return ['flagstat']
+
+    def verbatimable(self, run_task):
+        text = f"samtools flagstat {self.user_verbatim} mapped/{run_task.sample_id}.bam > flagstat/{run_task.sample_id}.txt"
+        return text
+
+    def expected_output(self, run_task):
+        return f'{self.directory}/flagstat/{run_task.sample_id}.txt'
+
+    def main_text(self, run_task):
+        text = self.verbatimable(run_task)
+        return text
+
+
+class FlagstatJobSingle(FlagstatJob):
+    pass
+
+
+class FlagstatJobPaired(FlagstatJob):
+    pass
+
+
 class BWAJobSingle(BWAJob):
     def verbatimable(self, run_task):
         unpaired_inner = ' '.join(['trimmed/{}.fastq.gz'.format(x) for x in run_task.run_ids])
@@ -686,47 +717,6 @@ class BWAJobSingle(BWAJob):
         text = f"bwa-mem2 mem {self.user_verbatim} ../genomes/{self.sp}/{self.sp} {unpaired} > " \
                f"mapped/{run_task.sample_id}.sam"
         return text
-
-
-class CoverageJob(Job):
-    def __init__(self, directory):
-        super(CoverageJob, self).__init__(directory)
-        self.name = "coverage"
-        self.time = "01:55:00"
-        self.mb = 2500
-        self.threads = 1
-        self.modules = ['Python/3.4.5']
-        self.sp = 'Athaliana'
-
-    @property
-    def extra_loading_verbatim(self):
-        return 'source ~/virtualenvs/venv3/bin/activate'
-
-    def main_text(self, run_task):
-        return "\n{}".format(self.verbatimable(run_task.sample_id))
-
-    def verbatimable(self, sample_id):
-        text = """python ~/repos/naivlix1/cov_vs_pos.py -o coverage/{sample_id} -f ../genomes/{sp}/{sp}.fa \
--b mapped/{sample_id}.bam --seperate_x --deterministic=puma -F raw --skip_x {verbatim}
-""".format(sp=self.sp, sample_id=sample_id, verbatim=self.user_verbatim)
-        return text
-
-    def expected_output(self, run_task):
-        sets = ['val', 'test', 'train']
-        xy = ['x', 'y']
-        endings = ['{}_{}.csv'.format(aset, c) for aset in sets for c in xy]
-        return ['coverage/{}.{}'.format(run_task.sample_id, x) for x in endings]
-
-    def output_dirs(self):
-        return ['coverage']
-
-
-class CoverageJobSingle(CoverageJob):
-    pass
-
-
-class CoverageJobPaired(CoverageJob):
-    pass
 
 
 class CollectRNAseqMetricsJob(Job):
