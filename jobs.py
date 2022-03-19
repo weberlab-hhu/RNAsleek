@@ -362,6 +362,7 @@ fastq-dump ./{} --gzip --split-3 {}
     def output_dirs(self):
         return ['fastqs']
 
+
 # todo, this is 1:1 with fetch... maybe make more generic?
 class WgetJobSingle(WgetJob):
     def expected_output(self, run_task):
@@ -376,6 +377,7 @@ class WgetJobPaired(WgetJob):
             out += ['{}/fastqs/{}{}.fastq.gz'.format(self.directory, run_id, x)
                     for x in run_task.untrimmed_paired_extras]
         return out
+
 
 # fetching section
 class FetchJob(Job):
@@ -588,6 +590,7 @@ class FastqcJobPaired(FastqcJobSingle):
 
         return out
 
+
 class MappingJob(Job):
     def __init__(self, directory):
         super(MappingJob, self).__init__(directory)
@@ -651,6 +654,42 @@ class HisatJobPaired(HisatJob):
 -p{threads} {verbatim}
 """.format(sp=self.sp, sample_id=run_task.sample_id, forward=forward, unpaired=unpaired, reverse=reverse,
            threads=self.threads, verbatim=self.user_verbatim)
+        return text
+
+
+class BowtieJob(MappingJob):
+    def __init__(self, directory):
+        super(BowtieJob, self).__init__(directory)
+        self.name = 'bowtie'
+        self.mb = 4000
+        self.modules = ['SamTools/1.6']
+        self.sp = None
+
+    def verbatimable(self, run_task):
+        raise NotImplementedError('Parent Bowtie class has no "verbatimable" defined')
+
+
+class BowtieJobPaired(BowtieJob):
+    def verbatimable(self, run_task):
+        if run_task.trimmed_paired_extras != ['_1P', '_2P', '_1U', '_2U']:
+            raise ValueError("miss match between expected trimming endings and Task")
+        forward = ','.join(['trimmed/{}_1P.fastq.gz'.format(x) for x in run_task.run_ids])
+        reverse = ','.join(['trimmed/{}_2P.fastq.gz'.format(x) for x in run_task.run_ids])
+        unpaired = ','.join(['trimmed/{0}_1U.fastq.gz,trimmed/{0}_2U.fastq.gz'.format(x) for x in run_task.run_ids])
+        text = """bowtie2 -x ../genomes/{sp}/{sp} -1 {forward} -2 {reverse} -U {unpaired} -S mapped/{sample_id}.sam \
+    -p{threads} {verbatim}
+    """.format(sp=self.sp, sample_id=run_task.sample_id, forward=forward, unpaired=unpaired, reverse=reverse,
+               threads=self.threads, verbatim=self.user_verbatim)
+        return text
+
+
+class BowtieJobSingle(HisatJob):
+
+    def verbatimable(self, run_task):
+        unpaired = ','.join(['trimmed/{}.fastq.gz'.format(x) for x in run_task.run_ids])
+        text = """bowtie2 -x ../genomes/{sp}/{sp} -U {unpaired} -S mapped/{sample_id}.sam -p{threads} {verbatim}
+""".format(sp=self.sp, unpaired=unpaired, sample_id=run_task.sample_id, threads=self.threads,
+           verbatim=self.user_verbatim)
         return text
 
 
