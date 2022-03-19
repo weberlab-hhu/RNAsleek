@@ -662,7 +662,7 @@ class BowtieJob(MappingJob):
         super(BowtieJob, self).__init__(directory)
         self.name = 'bowtie'
         self.mb = 4000
-        self.modules = ['SamTools/1.6']
+        self.modules = ['SamTools/1.6', 'Python/3.8.3']
         self.sp = None
 
     def verbatimable(self, run_task):
