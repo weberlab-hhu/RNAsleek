@@ -683,7 +683,7 @@ class BowtieJobPaired(BowtieJob):
         return text
 
 
-class BowtieJobSingle(HisatJob):
+class BowtieJobSingle(BowtieJob):
 
     def verbatimable(self, run_task):
         unpaired = ','.join(['trimmed/{}.fastq.gz'.format(x) for x in run_task.run_ids])
