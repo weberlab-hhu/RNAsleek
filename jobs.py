@@ -825,6 +825,9 @@ gzip $basename.refflat3
 ## hisat2 index
 hisat2-build genomes/$species/$species.fa genomes/$species/$species
 
+## bowtie2 index
+bowtie2-build genomes/$species/$species.fa genomes/$species/$species
+
 ## bwa mem index
 bwa-mem2 index -p genomes/$species/$species genomes/$species/$species.fa 
 """
