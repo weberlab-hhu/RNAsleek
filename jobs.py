@@ -725,6 +725,7 @@ class FlagstatJob(Job):
         self.time = "06:55:00"
         self.mb = 200
         self.threads = 1
+        self.modules = ['SamTools/1.6']
 
     def output_dirs(self):
         return ['flagstat']
