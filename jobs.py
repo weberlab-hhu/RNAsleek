@@ -612,6 +612,7 @@ class MappingJob(Job):
     def shared_text(self, run_task):
         text = """
 samtools view mapped/{sample_id}.sam -b |samtools sort -T mapped/tmp{sample_id} -@{threads} -o mapped/{sample_id}.bam
+samtools index mapped/{sample_id}.bam 
 """.format(sample_id=run_task.sample_id, threads=self.threads)
         return text
 
@@ -808,7 +809,7 @@ class MarkDuplicatesJob(Job):
         super(MarkDuplicatesJob, self).__init__(directory)
         self.name = 'mark_duplicates'
         self.mb = 1200
-        self.modules = ['Java/1.8.0']
+        self.modules = ['Java/1.8.0', 'SamTools/1.6']
 
     def output_dirs(self):
         return ['deduplicated']
@@ -826,8 +827,9 @@ class MarkDuplicatesJob(Job):
 
     def main_text(self, run_task):
         txt = self.verbatimable(run_task)
-        txt += "\nsamtools view -F 1024 deduplicated/{srs}_marked.bam -b > deduplicated/{srs}.bam".format(
-            srs=run_task.sample_id)
+        txt += """
+samtools view -F 1024 deduplicated/{srs}_marked.bam -b > deduplicated/{srs}.bam
+samtools index deduplicated/{srs}.bam""".format(srs=run_task.sample_id)
         return txt
 
 
