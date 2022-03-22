@@ -735,11 +735,16 @@ class FlagstatJob(Job):
         return text
 
     def expected_output(self, run_task):
-        return f'{self.directory}/flagstat/{run_task.sample_id}.txt'
+        return [f'{self.directory}/flagstat/{run_task.sample_id}.txt']
 
     def main_text(self, run_task):
         text = self.verbatimable(run_task)
         return text
+
+    @property
+    def expected_output_size(self):
+        # flagstat seems to be rather consistently 393, so basically check not empty
+        return 100
 
 
 class FlagstatJobSingle(FlagstatJob):
@@ -795,6 +800,42 @@ class CollectRNAseqMetricsJobPaired(CollectRNAseqMetricsJob):
 
 
 class CollectRNAseqMetricsJobSingle(CollectRNAseqMetricsJob):
+    pass
+
+
+class MarkDuplicatesJob(Job):
+    def __init__(self, directory):
+        super(MarkDuplicatesJob, self).__init__(directory)
+        self.name = 'mark_duplicates'
+        self.mb = 1200
+        self.modules = ['Java/1.8.0']
+
+    def output_dirs(self):
+        return ['deduplicated']
+
+    def expected_output(self, run_task):
+        return ['{}/deduplicated/{}{}'.format(self.directory, run_task.sample_id, end)
+                for end in ['.stats', '_marked.bam', '.bam']]
+
+    def verbatimable(self, run_task, strand="NONE"):
+        text = """java -Xmx1G -jar $HOME/extra_programs/picard.jar MarkDuplicates \
+    I=mapped/{srs}.bam O=deduplicated/{srs}_marked.bam M=deduplicated/{srs}.stats \
+    {verbatim}""".format(srs=run_task.sample_id,
+                         verbatim=self.user_verbatim)
+        return text
+
+    def main_text(self, run_task):
+        txt = self.verbatimable(run_task)
+        txt += "\nsamtools view -F 1024 deduplicated/{srs}_marked.bam -b > deduplicated/{srs}.bam".format(
+            srs=run_task.sample_id)
+        return txt
+
+
+class MarkDuplicatesJobPaired(MarkDuplicatesJob):
+    pass
+
+
+class MarkDuplicatesJobSingle(MarkDuplicatesJob):
     pass
 
 
