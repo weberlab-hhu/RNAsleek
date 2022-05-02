@@ -69,6 +69,17 @@ must be specified.
 
 See example.ini
 
+## Directory Organization at start
+I would recommend using:
+(SraRunInfo.csv and config.ini don't have to be there, it just makes it easier
+to keep track of)
+
+```
+<my directory>/SraRunInfo.csv
+<my directory>/config.ini
+genomes  # this will be autocreated
+```
+
 ### Prepped genome information
 
 If you haven't setup a genome with indexes for this species yet,
