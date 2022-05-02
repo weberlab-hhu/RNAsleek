@@ -832,6 +832,11 @@ samtools view -F 1024 deduplicated/{srs}_marked.bam -b > deduplicated/{srs}.bam
 samtools index deduplicated/{srs}.bam""".format(srs=run_task.sample_id)
         return txt
 
+    @property
+    def expected_output_size(self):
+        # stats files all 512 so far. Not a particularly informative cutoff for the .bam output, oh well
+        return 400
+
 
 class MarkDuplicatesJobPaired(MarkDuplicatesJob):
     pass

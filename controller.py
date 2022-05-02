@@ -38,6 +38,8 @@ class Project:
             for job_name in targ_jobs:
                 job_list.append(jobs.__dict__['{}Job{}'.format(job_name, extra)](directory))
         else:
+            if not os.path.exists(job_config):
+                raise FileNotFoundError(f'File: "{job_config}" not found')
             config = ConfigObj(job_config)
             print('adding jobs from {}:'.format(job_config))
             print(config.sections)
@@ -280,12 +282,14 @@ def filter_runinfo(parsed_runinfo, config_file):
 
 
 def config_based_filters(config_file):
+    if not os.path.exists(config_file):
+        raise FileNotFoundError(f'File: "{config_file}" not found')
     config = ConfigObj(config_file)
     targets = {
         'scientific_name': None,
         'taxid': None,
-        'platform': "ILLUMINA",
-        'library_strategy': "RNA-Seq",
+        'platform': None,
+        'library_strategy': None,
         'consent': "public"
     }
     for key in targets:
