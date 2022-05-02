@@ -335,7 +335,8 @@ class WgetJob(Job):
         self.mb = 400
 
     def main_text(self, run_task):
-        text = "cd $PBS_O_WORKDIR/fastqs\n\n"
+        text = "if [ ! $PBS_O_WORKDIR ];then PBS_O_WORKDIR=`pwd`;fi\n\n" \
+               "cd $PBS_O_WORKDIR/fastqs\n\n"
         for i, run_id in enumerate(run_task.run_ids):
             download_path = run_task.download_paths[i]
             sra = download_path.split('/')[-1]
@@ -388,7 +389,8 @@ class FetchJob(Job):
         self.mb = 200
 
     def main_text(self, run_task):
-        text = "cd $PBS_O_WORKDIR/fastqs\n\n"
+        text = "if [ ! $PBS_O_WORKDIR ];then PBS_O_WORKDIR=`pwd`;fi\n\n" \
+               "cd $PBS_O_WORKDIR/fastqs\n\n"
         for run_id in run_task.run_ids:
             text += "{}\n".format(self.verbatimable(run_id))
 

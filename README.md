@@ -154,7 +154,7 @@ python <path_to>/RNAsleek/viz/summarizer.py <project_directory> <RunInfo_file> -
 # needs slight customization because each script calls the variable `$PBS_O_WORKDIR`
 # so make this variable (obviously, this assumes your wd is the project directory,
 # and if not, `pwd` can be replaced with the full path to the project directory)
-export PBS_O_WORKDIR=`pwd`
+# export PBS_O_WORKDIR=`pwd`  # commented because this should be fixed, todo, remove once tested
 # run the download scripts
 ls scripts/wgetSRS*|xargs -n1 -P2 -I% bash %
 # copy the result to the hpc (or modify for your internet-free machine)
