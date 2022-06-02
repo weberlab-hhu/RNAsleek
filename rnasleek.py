@@ -57,6 +57,7 @@ def genome(ctx, fasta, gff3, species):
     shutil.copy(gff3, os.path.join(genome_sp_directory, f'{species}.gff3'))
 
     j = jobs.GenomePrepJob(proj_directory, species)
+    j.write_script()
     j.write_qsub(1)
 
 

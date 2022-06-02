@@ -12,6 +12,10 @@ class FileStdErrError(Exception):
     pass
 
 
+class FileStdErrException(Exception):
+    pass
+
+
 class FileStdErrKilled(Exception):
     pass
 
@@ -283,11 +287,17 @@ bash scripts/{name}$sample_id".sh" {redirect}
                     raise e
                 stderr_txt = stderr_txt.lower()
                 if 'error' in stderr_txt:
-                    yield ('FileStdErrError', 'stderr for job: {}, and sample: {} at {} contains "error"'.format(
-                        self.name, sample_id, report_path))
+                    yield ('FileStdErrError',
+                           'stderr for job: {}, and sample: {} at {} contains "error"'.format(
+                                self.name, sample_id, report_path))
                 if 'kill' in stderr_txt:
-                    yield ('FileStdErrKilled', 'stderr for job: {}, and sample: {}  at {} contains "kill"'.format(
-                        self.name, sample_id, report_path))
+                    yield ('FileStdErrKilled',
+                           'stderr for job: {}, and sample: {}  at {} contains "kill"'.format(
+                                self.name, sample_id, report_path))
+                if 'exception' in stderr_txt:
+                    yield ('FileStdErrException',
+                           'stderr for job: {}, and sample: {} at {} contains "exception"'.format(
+                                self.name, sample_id, report_path))
         return
 
     def clean_up(self, run_task):
@@ -858,7 +868,8 @@ class GenomePrepJob(Job):
         self.sp = species
         self.time = "23:55:00"
 
-    def start_main_text(self):
+    def main_text(self, run_task=None):
+        del run_task
         text = f"""
 cd ..
 ## refflat for Picard Tools
@@ -883,3 +894,16 @@ bowtie2-build genomes/$species/$species.fa genomes/$species/$species
 bwa-mem2 index -p genomes/$species/$species genomes/$species/$species.fa 
 """
         return text
+
+    def start_main_text(self):
+        out = """
+bash scripts/{name}.sh {redirect}
+""".format(name=self.name, redirect=self.TO_OE_TEXT)
+        return out
+
+    def write_script(self, run_task=None):
+        del run_task
+        script_text = self.main_text()
+        script_file = self.script_file("")  # "" for no sample_id
+        with open(script_file, 'w') as f:
+            f.write(script_text)
