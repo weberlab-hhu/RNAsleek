@@ -1,9 +1,14 @@
+import logging
 import os
 import jobs
 import csv
 from configobj import ConfigObj
 from tasks import Task
 import pandas as pd
+
+
+class MisMatchedLibraryLayout(Exception):
+    pass
 
 
 class Project:
@@ -225,6 +230,18 @@ def parse_runinfo(filein):
         line_list = group_by_sample[sample_name]
         runs = [x['run'] for x in line_list]
         download_paths = [x["download_path"] for x in line_list]
+        library_names = [x["library_name"] for x in line_list]
+        layouts = [x["library_layout"] for x in line_list]
+        if len(set(layouts)) > 1:
+            raise MisMatchedLibraryLayout(f"The following layouts found for one sample ({sample_name})\n"
+                                          f"{set(layouts)}\n"
+                                          f"This needs to be fixes in the RunInfo file, so that everything in "
+                                          f"one sample can be merged.")
+        if len(set(library_names)) > 1:
+            logging.warning(f"The following library names were all found for one sample ({sample_name})\n"
+                            f"{set(library_names)}\n"
+                            f"If these do not look like technical replicates, consider modifying the sample names"
+                            f"in the RunInfo file, as everything with the same sample name will be merged!")
         out.append(format_sample(line_list[0], runs, download_paths))
     return out
 
@@ -252,7 +269,7 @@ def parse_name_cols(title_line):
     renaming = {"Run": "run", "download_path": "download_path", "LibraryStrategy": "library_strategy",
                 "LibraryLayout": "library_layout", "SRAStudy": "study", "Sample": "sample", "TaxID": "taxid",
                 "ScientificName": "scientific_name", "Consent": "consent", "SampleName": "sample_name",
-                "Platform": "platform"}
+                "Platform": "platform", "LibraryName": "library_name"}
 
     name_cols = {}
     for key, val in renaming.items():
