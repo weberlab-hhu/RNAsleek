@@ -405,10 +405,12 @@ class FetchJob(Job):
             text += "{}\n".format(self.verbatimable(run_id))
 
         text += "\ncd $PBS_O_WORKDIR\n"
+        # then compress the raw output ([:-3] removes ".gz") to get expected output;
+        text += "gzip {}\n".format(' '.join([o[:-3] for o in self.expected_output(run_task)]))
         return text
 
     def verbatimable(self, run_id):
-        return "fastq-dump {} --gzip --split-3 {}".format(run_id, self.user_verbatim)
+        return "fasterq-dump {} --split-3 {}".format(run_id, self.user_verbatim)
 
     def output_dirs(self):
         return ['fastqs']
